@@ -13,27 +13,6 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Helper function to get user display info
-  const getUserInitials = () => {
-    if (!user) return 'U';
-    const email = user.email || '';
-    return email.substring(0, 2).toUpperCase();
-  };
-
-  // Helper function to get user avatar URL
-  const getUserAvatar = () => {
-    if (!user) return '';
-    // Try to get avatar from user metadata
-    return user.user_metadata?.avatar_url || '';
-  };
-
-  // Helper function to get user name
-  const getUserName = () => {
-    if (!user) return 'User';
-    // Try to get name from user metadata
-    return user.user_metadata?.full_name || user.email || 'User';
-  };
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -77,8 +56,8 @@ const Navbar = () => {
           {user ? (
             <div className="flex items-center space-x-4">
               <Avatar className="hover-scale cursor-pointer">
-                <AvatarImage src={getUserAvatar()} alt={getUserName()} />
-                <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                <AvatarImage src={user.photoURL} alt={user.name} />
+                <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <Button 
                 variant="ghost" 
@@ -131,10 +110,10 @@ const Navbar = () => {
           {user ? (
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={getUserAvatar()} alt={getUserName()} />
-                <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                <AvatarImage src={user.photoURL} alt={user.name} />
+                <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span className="text-xl font-medium">{getUserName()}</span>
+              <span className="text-xl font-medium">{user.name}</span>
               <Button 
                 variant="ghost" 
                 size="lg" 

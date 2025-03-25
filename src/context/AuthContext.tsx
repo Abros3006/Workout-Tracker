@@ -1,47 +1,75 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  photoURL: string;
+} | null;
 
 type AuthContextType = {
-  user: User | null;
-  session: Session | null;
+  user: User;
   loading: boolean;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Check if user is already logged in (e.g. from localStorage)
+    const savedUser = localStorage.getItem('workout-tracker-user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Failed to parse saved user', error);
+        localStorage.removeItem('workout-tracker-user');
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    setLoading(false);
   }, []);
+
+  // Mock Google Sign-In for now - will be replaced with actual implementation
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock user data
+      const mockUser = {
+        id: 'google-user-123',
+        name: 'Demo User',
+        email: 'demo@example.com',
+        photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0D8ABC&color=fff'
+      };
+      
+      setUser(mockUser);
+      localStorage.setItem('workout-tracker-user', JSON.stringify(mockUser));
+      toast.success('Successfully signed in!');
+    } catch (error) {
+      console.error('Sign in error', error);
+      toast.error('Failed to sign in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setUser(null);
+      localStorage.removeItem('workout-tracker-user');
       toast.success('You have been signed out');
     } catch (error) {
       console.error('Sign out error', error);
@@ -52,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
