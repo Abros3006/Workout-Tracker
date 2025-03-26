@@ -9,6 +9,7 @@ import { Plus, CalendarCheck, CheckCircle } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import ExerciseForm from '@/components/ExerciseForm';
 import WeeklySchedule from '@/components/WeeklySchedule';
+import ExerciseList from '@/components/ExerciseList';
 import { toast } from 'sonner';
 
 const daysOfWeek = [
