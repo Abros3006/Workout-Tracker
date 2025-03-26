@@ -53,6 +53,18 @@ const Navbar = () => {
             Home
           </Link>
           
+          {user && (
+            <Link 
+              to="/dashboard" 
+              className={cn(
+                "text-base font-medium hover:text-primary transition-colors",
+                location.pathname === "/dashboard" ? "text-primary" : "text-foreground/80"
+              )}
+            >
+              Dashboard
+            </Link>
+          )}
+          
           {user ? (
             <div className="flex items-center space-x-4">
               <Avatar className="hover-scale cursor-pointer">
@@ -106,6 +118,19 @@ const Navbar = () => {
           >
             Home
           </Link>
+          
+          {user && (
+            <Link 
+              to="/dashboard" 
+              className={cn(
+                "text-2xl font-medium hover:text-primary transition-colors",
+                location.pathname === "/dashboard" ? "text-primary" : "text-foreground/80"
+              )}
+              onClick={closeMobileMenu}
+            >
+              Dashboard
+            </Link>
+          )}
           
           {user ? (
             <div className="flex flex-col items-center space-y-4">
