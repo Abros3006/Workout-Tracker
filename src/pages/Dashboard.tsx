@@ -10,12 +10,14 @@ import ExerciseForm from '@/components/ExerciseForm';
 import WeeklySchedule from '@/components/WeeklySchedule';
 import ExerciseList from '@/components/ExerciseList';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const daysOfWeek = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
 ];
 
 interface CompletedWorkout {
+  id: string;
   day: string;
   date: string;
 }
@@ -26,12 +28,34 @@ const Dashboard = () => {
   const [selectedDay, setSelectedDay] = useState('');
   const [completedWorkouts, setCompletedWorkouts] = useState<CompletedWorkout[]>([]);
   const [todayWorkout, setTodayWorkout] = useState<string>('');
+  const [reloadExercises, setReloadExercises] = useState(0);
 
-  // Set today's day on component mount
+  // Set today's day on component mount and fetch completed workouts
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     setTodayWorkout(today);
-  }, []);
+    
+    const fetchCompletedWorkouts = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('completed_workouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (error) throw error;
+        
+        setCompletedWorkouts(data || []);
+      } catch (error) {
+        console.error('Error fetching completed workouts:', error);
+      }
+    };
+
+    fetchCompletedWorkouts();
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" />;
@@ -45,15 +69,37 @@ const Dashboard = () => {
   const handleExerciseFormClose = (saved: boolean = false) => {
     setShowExerciseForm(false);
     if (saved) {
+      // Trigger a reload of exercises by updating the state
+      setReloadExercises(prev => prev + 1);
       toast.success(`Exercise added to ${selectedDay}`);
     }
   };
 
-  const handleWorkoutCompleted = (day: string, date: string) => {
-    setCompletedWorkouts(prev => [...prev, { day, date }]);
-    // Store the completed workout in localStorage or database
-    // This is a placeholder - in a real app you'd store this persistently
-    toast.success(`${day}'s workout completed! 💪`);
+  const handleWorkoutCompleted = async (day: string, date: string) => {
+    try {
+      const { error } = await supabase
+        .from('completed_workouts')
+        .insert({
+          user_id: user.id,
+          day,
+          date
+        });
+        
+      if (error) throw error;
+      
+      // Update completed workouts list without a full reload
+      const newCompletedWorkout = {
+        id: Date.now().toString(), // Temporary ID until we refresh
+        day,
+        date
+      };
+      
+      setCompletedWorkouts(prev => [newCompletedWorkout, ...prev]);
+      toast.success(`${day}'s workout completed! 💪`);
+    } catch (error) {
+      console.error('Error saving completed workout:', error);
+      toast.error('Failed to save workout completion');
+    }
   };
 
   return (
@@ -79,6 +125,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ExerciseList 
+                key={`today-${reloadExercises}`}
                 day={todayWorkout} 
                 onWorkoutCompleted={handleWorkoutCompleted}
                 showCompletionButton={true}
@@ -93,6 +140,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <WeeklySchedule 
+                key={`schedule-${reloadExercises}`}
                 days={daysOfWeek} 
                 onAddExercise={handleAddExercise}
                 currentDay={todayWorkout} 

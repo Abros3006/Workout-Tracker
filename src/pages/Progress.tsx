@@ -1,26 +1,61 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { CheckCircle } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface CompletedWorkout {
+  id: string;
   day: string;
   date: string;
 }
 
-// For demo purposes, we'll have some sample completed workouts
-// In a real app, you would fetch this from a database
-const sampleCompletedWorkouts: CompletedWorkout[] = [
-  { day: 'Monday', date: new Date().toISOString().split('T')[0] },
-  { day: 'Wednesday', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-];
-
 const Progress = () => {
   const { user } = useAuth();
-  const [completedWorkouts] = useState<CompletedWorkout[]>(sampleCompletedWorkouts);
+  const [completedWorkouts, setCompletedWorkouts] = useState<CompletedWorkout[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Calculate stats
+  const totalWorkoutsThisWeek = completedWorkouts.filter(workout => {
+    const workoutDate = new Date(workout.date);
+    const today = new Date();
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(today.getDate() - 7);
+    return workoutDate >= oneWeekAgo && workoutDate <= today;
+  }).length;
+  
+  const progressPercentage = Math.min(Math.round((totalWorkoutsThisWeek / 7) * 100), 100);
+
+  useEffect(() => {
+    const fetchCompletedWorkouts = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('completed_workouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        setCompletedWorkouts(data || []);
+      } catch (error) {
+        console.error('Error fetching completed workouts:', error);
+        toast.error('Failed to load your progress');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompletedWorkouts();
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" />;
@@ -34,17 +69,40 @@ const Progress = () => {
           
           <Card>
             <CardHeader className="pb-2">
+              <CardTitle className="text-xl">Weekly Goal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">This week's workouts</span>
+                  <span className="font-medium">{totalWorkoutsThisWeek}/7</span>
+                </div>
+                <Progress value={progressPercentage} className="h-2" />
+                <p className="text-sm text-muted-foreground">
+                  {progressPercentage}% of your weekly goal completed
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
               <CardTitle className="text-2xl">Completed Workouts</CardTitle>
             </CardHeader>
             <CardContent>
-              {completedWorkouts.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Loading your progress...</p>
+                </div>
+              ) : completedWorkouts.length === 0 ? (
                 <p className="text-muted-foreground">You haven't completed any workouts yet. Keep going!</p>
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    {completedWorkouts.map((workout, index) => (
+                    {completedWorkouts.map((workout) => (
                       <div 
-                        key={index} 
+                        key={workout.id} 
                         className="p-3 border rounded-md flex items-center"
                       >
                         <CheckCircle className="h-5 w-5 text-green-500 mr-3" />

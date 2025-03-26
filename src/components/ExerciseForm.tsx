@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Exercise name must be at least 2 characters' }),
@@ -24,6 +27,7 @@ interface ExerciseFormProps {
 }
 
 const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
+  const { user } = useAuth();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,10 +39,61 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log('Exercise submitted for', day, data);
-    // Here you would save the exercise to a database or state
-    onClose(true);
+  const onSubmit = async (data: FormValues) => {
+    if (!user) {
+      toast.error('You must be logged in to add exercises');
+      return;
+    }
+
+    try {
+      // First, check if a workout for this day already exists
+      const { data: existingWorkouts, error: fetchError } = await supabase
+        .from('workouts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('day', day)
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      let workoutId;
+
+      // If no workout exists for this day, create one
+      if (!existingWorkouts || existingWorkouts.length === 0) {
+        const { data: newWorkout, error: createError } = await supabase
+          .from('workouts')
+          .insert({
+            user_id: user.id,
+            day: day,
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        workoutId = newWorkout.id;
+      } else {
+        workoutId = existingWorkouts[0].id;
+      }
+
+      // Now add the exercise to the workout
+      const { error: exerciseError } = await supabase
+        .from('exercises')
+        .insert({
+          workout_id: workoutId,
+          name: data.name,
+          sets: data.sets,
+          reps: data.reps,
+          weight: data.weight
+        });
+
+      if (exerciseError) throw exerciseError;
+
+      toast.success(`Added ${data.name} to ${day}'s workout`);
+      onClose(true);
+    } catch (error) {
+      console.error('Error saving exercise:', error);
+      toast.error('Failed to save exercise. Please try again.');
+    }
   };
 
   return (

@@ -9,7 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      completed_workouts: {
+        Row: {
+          created_at: string
+          date: string
+          day: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          day: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          day?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exercises: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          reps: number
+          sets: number
+          updated_at: string
+          weight: number
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          reps: number
+          sets: number
+          updated_at?: string
+          weight?: number
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          reps?: number
+          sets?: number
+          updated_at?: string
+          weight?: number
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workouts: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

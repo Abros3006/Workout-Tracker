@@ -13,7 +13,7 @@ interface WeeklyScheduleProps {
 }
 
 const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ days, onAddExercise, currentDay }) => {
-  const [openDays, setOpenDays] = useState<string[]>([days[0]]);
+  const [openDays, setOpenDays] = useState<string[]>([currentDay || days[0]]);
 
   const toggleDay = (day: string) => {
     setOpenDays(current => 

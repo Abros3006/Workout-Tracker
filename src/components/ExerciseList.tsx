@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, CalendarCheck } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface Exercise {
   id: string;
@@ -26,21 +28,58 @@ const ExerciseList: React.FC<ExerciseListProps> = ({
   onWorkoutCompleted,
   showCompletionButton = false
 }) => {
-  // This would typically come from a database or state management
+  const { user } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [allCompleted, setAllCompleted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for demonstration - would be replaced with actual data fetching
   useEffect(() => {
-    // For testing purposes only - in a real app this would come from a database
-    const mockExercises = day === new Date().toLocaleDateString('en-US', { weekday: 'long' }) ? [
-      { id: '1', name: 'Bench Press', sets: 3, reps: 12, weight: 70 },
-      { id: '2', name: 'Squats', sets: 4, reps: 10, weight: 100 },
-      { id: '3', name: 'Pull Ups', sets: 3, reps: 8, weight: 0 },
-    ] : [];
-    
-    setExercises(mockExercises.map(ex => ({ ...ex, completed: false })));
-  }, [day]);
+    const fetchExercises = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        // First, get the workout ID for this day
+        const { data: workouts, error: workoutError } = await supabase
+          .from('workouts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('day', day);
+
+        if (workoutError) throw workoutError;
+
+        // If no workout found for this day, return empty array
+        if (!workouts || workouts.length === 0) {
+          setExercises([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Get all exercises for this workout
+        const { data: exercisesData, error: exercisesError } = await supabase
+          .from('exercises')
+          .select('*')
+          .eq('workout_id', workouts[0].id);
+          
+        if (exercisesError) throw exercisesError;
+
+        // Initialize all exercises as not completed
+        const formattedExercises = exercisesData ? exercisesData.map(ex => ({
+          ...ex,
+          completed: false
+        })) : [];
+
+        setExercises(formattedExercises);
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+        toast.error('Failed to load exercises');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchExercises();
+  }, [user, day]);
 
   const toggleExerciseCompleted = (id: string) => {
     setExercises(prevExercises => {
@@ -56,13 +95,45 @@ const ExerciseList: React.FC<ExerciseListProps> = ({
     });
   };
 
-  const markWorkoutCompleted = () => {
-    if (onWorkoutCompleted) {
+  const markWorkoutCompleted = async () => {
+    if (!user) {
+      toast.error('You must be logged in to track workouts');
+      return;
+    }
+
+    try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      onWorkoutCompleted(day, today);
+      
+      // Insert the completed workout
+      const { error } = await supabase
+        .from('completed_workouts')
+        .insert({
+          user_id: user.id,
+          day,
+          date: today
+        });
+        
+      if (error) throw error;
+
+      if (onWorkoutCompleted) {
+        onWorkoutCompleted(day, today);
+      }
+      
       toast.success(`${day}'s workout completed! 💪`);
+    } catch (error) {
+      console.error('Error saving completed workout:', error);
+      toast.error('Failed to save workout completion');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-4">
+        <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent mx-auto"></div>
+        <p className="mt-2 text-muted-foreground">Loading exercises...</p>
+      </div>
+    );
+  }
 
   if (exercises.length === 0) {
     return (
@@ -107,7 +178,7 @@ const ExerciseList: React.FC<ExerciseListProps> = ({
         </Table>
       </div>
 
-      {showCompletionButton && allCompleted && (
+      {showCompletionButton && allCompleted && exercises.length > 0 && (
         <Button 
           onClick={markWorkoutCompleted}
           className="w-full"
