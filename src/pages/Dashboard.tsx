@@ -48,33 +48,33 @@ const Dashboard = () => {
                 <TabsTrigger value="schedule">Weekly Schedule</TabsTrigger>
                 <TabsTrigger value="progress">My Progress</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="schedule" className="mt-0">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-2xl">Your Weekly Workout Plan</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <WeeklySchedule 
+                      days={daysOfWeek} 
+                      onAddExercise={handleAddExercise} 
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="progress" className="mt-0">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-2xl">Your Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Track your workout progress here. Coming soon!</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
-
-          <TabsContent value="schedule" className="mt-0">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-2xl">Your Weekly Workout Plan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WeeklySchedule 
-                  days={daysOfWeek} 
-                  onAddExercise={handleAddExercise} 
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="progress" className="mt-0">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-2xl">Your Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Track your workout progress here. Coming soon!</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </div>
 
         {showExerciseForm && (
