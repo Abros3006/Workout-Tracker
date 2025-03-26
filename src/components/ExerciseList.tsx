@@ -18,9 +18,14 @@ interface Exercise {
 interface ExerciseListProps {
   day: string;
   onWorkoutCompleted?: (day: string, date: string) => void;
+  showCompletionButton?: boolean;
 }
 
-const ExerciseList: React.FC<ExerciseListProps> = ({ day, onWorkoutCompleted }) => {
+const ExerciseList: React.FC<ExerciseListProps> = ({ 
+  day, 
+  onWorkoutCompleted,
+  showCompletionButton = false
+}) => {
   // This would typically come from a database or state management
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [allCompleted, setAllCompleted] = useState(false);
@@ -73,7 +78,7 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ day, onWorkoutCompleted }) 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">Done</TableHead>
+              {showCompletionButton && <TableHead className="w-[50px]">Done</TableHead>}
               <TableHead>Exercise</TableHead>
               <TableHead className="w-[80px] text-right">Sets</TableHead>
               <TableHead className="w-[80px] text-right">Reps</TableHead>
@@ -83,13 +88,15 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ day, onWorkoutCompleted }) 
           <TableBody>
             {exercises.map((exercise) => (
               <TableRow key={exercise.id}>
-                <TableCell>
-                  <Checkbox 
-                    checked={exercise.completed}
-                    onCheckedChange={() => toggleExerciseCompleted(exercise.id)}
-                    aria-label={`Mark ${exercise.name} as completed`}
-                  />
-                </TableCell>
+                {showCompletionButton && (
+                  <TableCell>
+                    <Checkbox 
+                      checked={exercise.completed}
+                      onCheckedChange={() => toggleExerciseCompleted(exercise.id)}
+                      aria-label={`Mark ${exercise.name} as completed`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{exercise.name}</TableCell>
                 <TableCell className="text-right">{exercise.sets}</TableCell>
                 <TableCell className="text-right">{exercise.reps}</TableCell>
@@ -100,7 +107,7 @@ const ExerciseList: React.FC<ExerciseListProps> = ({ day, onWorkoutCompleted }) 
         </Table>
       </div>
 
-      {allCompleted && (
+      {showCompletionButton && allCompleted && (
         <Button 
           onClick={markWorkoutCompleted}
           className="w-full"
