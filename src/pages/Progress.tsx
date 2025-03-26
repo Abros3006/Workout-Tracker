@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Progress as ProgressBar } from '@/components/ui/progress';
 import { CheckCircle } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,7 +77,7 @@ const Progress = () => {
                   <span className="text-sm text-muted-foreground">This week's workouts</span>
                   <span className="font-medium">{totalWorkoutsThisWeek}/7</span>
                 </div>
-                <Progress value={progressPercentage} className="h-2" />
+                <ProgressBar value={progressPercentage} className="h-2" />
                 <p className="text-sm text-muted-foreground">
                   {progressPercentage}% of your weekly goal completed
                 </p>
