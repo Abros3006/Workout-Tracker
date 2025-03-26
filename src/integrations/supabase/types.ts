@@ -11,25 +11,34 @@ export type Database = {
     Tables: {
       completed_workouts: {
         Row: {
+          calories: number | null
           created_at: string
           date: string
           day: string
           id: string
           user_id: string
+          water_intake: number | null
+          weight: number | null
         }
         Insert: {
+          calories?: number | null
           created_at?: string
           date: string
           day: string
           id?: string
           user_id: string
+          water_intake?: number | null
+          weight?: number | null
         }
         Update: {
+          calories?: number | null
           created_at?: string
           date?: string
           day?: string
           id?: string
           user_id?: string
+          water_intake?: number | null
+          weight?: number | null
         }
         Relationships: []
       }

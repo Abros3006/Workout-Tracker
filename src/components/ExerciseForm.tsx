@@ -46,6 +46,10 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
     }
 
     try {
+      console.log('Submitting exercise data:', data);
+      console.log('Day:', day);
+      console.log('User:', user.id);
+      
       // First, check if a workout for this day already exists
       const { data: existingWorkouts, error: fetchError } = await supabase
         .from('workouts')
@@ -54,12 +58,18 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
         .eq('day', day)
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching workouts:', fetchError);
+        throw fetchError;
+      }
 
+      console.log('Existing workouts:', existingWorkouts);
+      
       let workoutId;
 
       // If no workout exists for this day, create one
       if (!existingWorkouts || existingWorkouts.length === 0) {
+        console.log('Creating new workout for day:', day);
         const { data: newWorkout, error: createError } = await supabase
           .from('workouts')
           .insert({
@@ -69,10 +79,16 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating workout:', createError);
+          throw createError;
+        }
+        
+        console.log('New workout created:', newWorkout);
         workoutId = newWorkout.id;
       } else {
         workoutId = existingWorkouts[0].id;
+        console.log('Using existing workout ID:', workoutId);
       }
 
       // Now add the exercise to the workout
@@ -86,8 +102,12 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
           weight: data.weight
         });
 
-      if (exerciseError) throw exerciseError;
+      if (exerciseError) {
+        console.error('Error saving exercise:', exerciseError);
+        throw exerciseError;
+      }
 
+      console.log('Exercise added successfully');
       toast.success(`Added ${data.name} to ${day}'s workout`);
       onClose(true);
     } catch (error) {

@@ -9,6 +9,7 @@ import PageTransition from '@/components/PageTransition';
 import ExerciseForm from '@/components/ExerciseForm';
 import WeeklySchedule from '@/components/WeeklySchedule';
 import ExerciseList from '@/components/ExerciseList';
+import DailyMetricsTracker from '@/components/DailyMetricsTracker';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const [completedWorkouts, setCompletedWorkouts] = useState<CompletedWorkout[]>([]);
   const [todayWorkout, setTodayWorkout] = useState<string>('');
   const [reloadExercises, setReloadExercises] = useState(0);
+  const [reloadMetrics, setReloadMetrics] = useState(0);
 
   // Set today's day on component mount and fetch completed workouts
   useEffect(() => {
@@ -55,7 +57,7 @@ const Dashboard = () => {
     };
 
     fetchCompletedWorkouts();
-  }, [user]);
+  }, [user, reloadMetrics]);
 
   if (!user) {
     return <Navigate to="/login" />;
@@ -102,6 +104,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleMetricsUpdated = () => {
+    setReloadMetrics(prev => prev + 1);
+  };
+
   return (
     <PageTransition>
       <div className="container max-w-6xl mx-auto px-4 py-20 md:py-24">
@@ -114,6 +120,12 @@ const Dashboard = () => {
               </Button>
             </Link>
           </div>
+
+          {/* Today's Health Metrics Tracking */}
+          <DailyMetricsTracker 
+            day={todayWorkout} 
+            onMetricsUpdated={handleMetricsUpdated}
+          />
 
           {/* Today's Workout Card */}
           <Card>
