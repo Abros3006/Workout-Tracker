@@ -1,20 +1,46 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const Login = () => {
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { user, signInWithGoogle, signInWithEmail, loading } = useAuth();
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await signInWithEmail(email, password);
+      // Navigate will happen automatically due to the useEffect
+    } catch (error) {
+      console.error('Login error:', error);
+      // Toast error is shown in the auth context
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-secondary/30">
@@ -25,9 +51,11 @@ const Login = () => {
       >
         <Card className="w-full max-w-md glass-card border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
+            <CardTitle className="text-3xl font-bold">
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </CardTitle>
             <CardDescription>
-              Sign in to continue to PowerTrack
+              {isSignUp ? 'Sign up to start tracking your workouts' : 'Sign in to continue to PowerTrack'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -38,13 +66,60 @@ const Login = () => {
                 className="rounded-lg object-cover h-full w-full"
               />
             </div>
+            
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting || loading}
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                ) : (
+                  'Sign in with Email'
+                )}
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
             <Button 
               className="w-full hover-scale button-glow flex items-center justify-center gap-2 py-6"
               onClick={signInWithGoogle}
               disabled={loading}
+              variant="outline"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -71,8 +146,8 @@ const Login = () => {
               )}
             </Button>
           </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-muted-foreground">
+          <CardFooter className="flex flex-col justify-center">
+            <p className="text-sm text-muted-foreground mb-4 text-center">
               By continuing, you agree to our Terms of Service and Privacy Policy.
             </p>
           </CardFooter>

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type User = {
   id: string;
@@ -13,6 +14,7 @@ type AuthContextType = {
   user: User;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -22,41 +24,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
+  // Format user data to match our app's user structure
+  const formatUser = (userData: any): User => {
+    if (!userData) return null;
+    
+    return {
+      id: userData.id,
+      name: userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'User',
+      email: userData.email || '',
+      photoURL: userData.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'User')}&background=0D8ABC&color=fff`,
+    };
+  };
+
+  // Set up auth state listener
   useEffect(() => {
-    // Check if user is already logged in (e.g. from localStorage)
-    const savedUser = localStorage.getItem('workout-tracker-user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Failed to parse saved user', error);
-        localStorage.removeItem('workout-tracker-user');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event);
+        if (session?.user) {
+          const formattedUser = formatUser(session.user);
+          setUser(formattedUser);
+          localStorage.setItem('workout-tracker-user', JSON.stringify(formattedUser));
+        } else {
+          setUser(null);
+          localStorage.removeItem('workout-tracker-user');
+        }
       }
-    }
-    setLoading(false);
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const formattedUser = formatUser(session.user);
+        setUser(formattedUser);
+        localStorage.setItem('workout-tracker-user', JSON.stringify(formattedUser));
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock Google Sign-In for now - will be replaced with actual implementation
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
       
-      // Mock user data
-      const mockUser = {
-        id: 'google-user-123',
-        name: 'Demo User',
-        email: 'demo@example.com',
-        photoURL: 'https://ui-avatars.com/api/?name=Demo+User&background=0D8ABC&color=fff'
-      };
+      if (error) throw error;
+      toast.success('Redirecting to Google...');
+    } catch (error) {
+      console.error('Google sign in error', error);
+      toast.error('Failed to sign in with Google. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      setUser(mockUser);
-      localStorage.setItem('workout-tracker-user', JSON.stringify(mockUser));
+      if (error) throw error;
       toast.success('Successfully signed in!');
     } catch (error) {
-      console.error('Sign in error', error);
-      toast.error('Failed to sign in. Please try again.');
+      console.error('Email sign in error', error);
+      toast.error('Failed to sign in. Please check your credentials and try again.');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -65,8 +108,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
       setUser(null);
       localStorage.removeItem('workout-tracker-user');
@@ -80,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
