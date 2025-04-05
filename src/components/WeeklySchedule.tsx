@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import ExerciseList from '@/components/ExerciseList';
+import Exercises from './Exercises';
 
 interface WeeklyScheduleProps {
   days: string[];
@@ -44,9 +44,8 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ days, onAddExercise, cu
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="p-4 pt-0 border-t">
-              <ExerciseList 
+              <Exercises 
                 day={day} 
-                showCompletionButton={day === currentDay}
               />
               <Button 
                 onClick={() => onAddExercise(day)} 
