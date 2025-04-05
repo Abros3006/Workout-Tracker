@@ -55,8 +55,7 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
         .from('workouts')
         .select('id')
         .eq('user_id', user.id)
-        .eq('day', day)
-        .limit(1);
+        .eq('day', day);
 
       if (fetchError) {
         console.error('Error fetching workouts:', fetchError);
@@ -76,16 +75,19 @@ const ExerciseForm: React.FC<ExerciseFormProps> = ({ day, onClose }) => {
             user_id: user.id,
             day: day,
           })
-          .select()
-          .single();
+          .select();
 
         if (createError) {
           console.error('Error creating workout:', createError);
           throw createError;
         }
         
+        if (!newWorkout || newWorkout.length === 0) {
+          throw new Error('Failed to create workout');
+        }
+        
         console.log('New workout created:', newWorkout);
-        workoutId = newWorkout.id;
+        workoutId = newWorkout[0].id;
       } else {
         workoutId = existingWorkouts[0].id;
         console.log('Using existing workout ID:', workoutId);

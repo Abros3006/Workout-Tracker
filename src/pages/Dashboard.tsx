@@ -9,7 +9,7 @@ import PageTransition from '@/components/PageTransition';
 import ExerciseForm from '@/components/ExerciseForm';
 import WeeklySchedule from '@/components/WeeklySchedule';
 import ExerciseList from '@/components/ExerciseList';
-import DailyMetricsTracker from '@/components/DailyMetricsTracker';
+import DailyMetricsForm from '@/components/DailyMetricsForm';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -122,7 +122,7 @@ const Dashboard = () => {
           </div>
 
           {/* Today's Health Metrics Tracking */}
-          <DailyMetricsTracker 
+          <DailyMetricsForm 
             day={todayWorkout} 
             onMetricsUpdated={handleMetricsUpdated}
           />

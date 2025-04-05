@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress as ProgressBar } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/ui/progress';
 import { CheckCircle, Droplet, Scale, Utensils } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
